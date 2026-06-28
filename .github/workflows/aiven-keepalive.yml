@@ -1,0 +1,38 @@
+name: Aiven Keepalive
+
+on:
+  schedule:
+    # Run once every hour. GitHub Actions cron uses UTC time.
+    # Minute 17 is used to avoid the busy start of each hour.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call login API to keep database active
+        env:
+          BACKEND_URL: ${{ secrets.KEEPALIVE_BACKEND_URL }}
+          KEEPALIVE_USERNAME: ${{ secrets.KEEPALIVE_USERNAME }}
+          KEEPALIVE_PASSWORD: ${{ secrets.KEEPALIVE_PASSWORD }}
+        run: |
+          set -e
+
+          echo "Calling backend login API..."
+
+          STATUS=$(curl -sS -o response.json -w "%{http_code}" \
+            -X POST "$BACKEND_URL/api/auth/login" \
+            -H "Content-Type: application/json" \
+            --data "{\"username\":\"$KEEPALIVE_USERNAME\",\"password\":\"$KEEPALIVE_PASSWORD\"}")
+
+          echo "HTTP status: $STATUS"
+
+          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 300 ]; then
+            echo "Keepalive failed. Response:"
+            cat response.json
+            exit 1
+          fi
+
+          echo "Keepalive success."
