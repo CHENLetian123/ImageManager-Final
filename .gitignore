@@ -25,3 +25,6 @@ frontend/.env
 
 # Logs
 *.log
+
+# Generated Folder Sync test image source folder
+test-data/ImageManager-Test-Images/

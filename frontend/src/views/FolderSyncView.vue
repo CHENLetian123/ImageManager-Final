@@ -101,10 +101,10 @@
         <button
           class="button primary wide"
           type="button"
-          :disabled="uploading || selectedCount === 0"
-          @click="uploadSelected"
+          :disabled="!canApplySync"
+          @click="applySync"
         >
-          {{ uploading ? 'Uploading...' : `Upload Selected (${selectedCount})` }}
+          {{ syncButtonText }}
         </button>
 
         <input
@@ -119,6 +119,9 @@
         />
 
         <div v-if="scanning" class="empty-state compact">Scanning folder...</div>
+        <div v-else-if="hasScanned && items.length === 0" class="empty-state compact">
+          Scan found no images. You can still apply cleanup when Delete Missing is selected.
+        </div>
         <div v-else-if="items.length === 0" class="empty-state compact">
           No scan result yet. Authorize a preset and click Sync.
         </div>
@@ -163,6 +166,7 @@ const fallbackPreset = ref(null)
 const loadingPresets = ref(false)
 const scanning = ref(false)
 const uploading = ref(false)
+const hasScanned = ref(false)
 const uploadedCount = ref(0)
 const selectedTotal = ref(0)
 const message = ref('')
@@ -175,7 +179,8 @@ const results = reactive({
   uploaded: 0,
   updated: 0,
   skipped: 0,
-  deleted: 0
+  deleted: 0,
+  failed: 0
 })
 
 const presetForm = reactive({
@@ -184,11 +189,23 @@ const presetForm = reactive({
 })
 
 const selectedCount = computed(() => items.value.filter((item) => item.selected).length)
+const canApplySync = computed(() => {
+  return !uploading.value && hasScanned.value && Boolean(activePreset.value) && (selectedCount.value > 0 || deleteMissing.value)
+})
 const progressPercent = computed(() => {
   if (!selectedTotal.value) {
     return 0
   }
   return Math.round((uploadedCount.value / selectedTotal.value) * 100)
+})
+const syncButtonText = computed(() => {
+  if (uploading.value) {
+    return 'Applying Sync...'
+  }
+  if (deleteMissing.value && selectedCount.value === 0) {
+    return 'Apply Sync (cleanup only)'
+  }
+  return `Apply Sync (${selectedCount.value} selected)`
 })
 const summaryText = computed(() => {
   const counts = items.value.reduce((acc, item) => {
@@ -311,6 +328,7 @@ async function scanHandle(preset, handle) {
   try {
     const files = await readDirectoryFiles(handle)
     await buildScanItems(preset, files)
+    hasScanned.value = true
     message.value = `Scan finished. ${items.value.length} image(s) found.`
   } finally {
     scanning.value = false
@@ -324,11 +342,19 @@ async function handleFallbackFiles(event) {
   if (!preset) {
     return
   }
-  await buildScanItems(preset, files.map((file) => ({
-    file,
-    relativePath: normalizePath(file.webkitRelativePath || file.name)
-  })))
-  message.value = `Scan finished. ${items.value.length} image(s) found.`
+  scanning.value = true
+  try {
+    await buildScanItems(preset, files.map((file) => ({
+      file,
+      relativePath: normalizePath(file.webkitRelativePath || file.name)
+    })))
+    hasScanned.value = true
+    message.value = `Scan finished. ${items.value.length} image(s) found.`
+  } catch (err) {
+    error.value = 'Folder scan failed.'
+  } finally {
+    scanning.value = false
+  }
 }
 
 async function buildScanItems(preset, entries) {
@@ -352,9 +378,12 @@ async function buildScanItems(preset, entries) {
     })
 }
 
-async function uploadSelected() {
+async function applySync() {
   const selected = items.value.filter((item) => item.selected)
-  if (!activePreset.value || selected.length === 0) {
+  if (!activePreset.value || !hasScanned.value || (selected.length === 0 && !deleteMissing.value)) {
+    return
+  }
+  if (deleteMissing.value && !window.confirm('This will delete cloud images that are missing from this local folder. Continue?')) {
     return
   }
 
@@ -365,9 +394,13 @@ async function uploadSelected() {
   error.value = ''
   message.value = ''
 
-  for (let index = 0; index < selected.length; index += 5) {
-    const batch = selected.slice(index, index + 5)
-    await Promise.all(batch.map((item) => uploadOne(item)))
+  try {
+    for (let index = 0; index < selected.length; index += 5) {
+      const batch = selected.slice(index, index + 5)
+      await Promise.all(batch.map((item) => uploadOne(item)))
+    }
+  } catch (err) {
+    error.value = 'Upload failed.'
   }
 
   try {
@@ -376,13 +409,40 @@ async function uploadSelected() {
       currentRelativePaths: items.value.map((item) => item.relativePath)
     })
     results.deleted = cleanup.data.deleted || 0
-    message.value = `${results.uploaded} uploaded, ${results.updated} updated, ${results.skipped} skipped, ${results.deleted} deleted.`
-    await loadPresets()
+    const failedText = results.failed > 0 ? ` ${results.failed} failed.` : ''
+    message.value = `${results.uploaded} uploaded, ${results.updated} updated, ${results.skipped} skipped, ${results.deleted} deleted.${failedText} Dashboard data has been updated.`
   } catch (err) {
     error.value = err.response?.data?.message || 'Cleanup failed.'
+    uploading.value = false
+    return
+  }
+
+  try {
+    await refreshScanStatus()
+    await loadPresets()
+    refreshActivePreset()
+  } catch (err) {
+    error.value = 'Sync finished, but refresh failed. Please scan again.'
   } finally {
     uploading.value = false
   }
+}
+
+async function refreshScanStatus() {
+  if (!activePreset.value || items.value.length === 0) {
+    return
+  }
+  const { data: cloudImages } = await getFolderImageIndex(activePreset.value.id)
+  const cloudIndex = new Map(cloudImages.map((image) => [normalizePath(image.relativePath), image]))
+  items.value = items.value.map((item) => {
+    const remote = cloudIndex.get(item.relativePath)
+    const status = resolveStatus(item.file, remote)
+    return {
+      ...item,
+      status,
+      selected: status === 'New' || status === 'Changed'
+    }
+  })
 }
 
 async function uploadOne(item) {
@@ -403,6 +463,7 @@ async function uploadOne(item) {
     item.status = response.status === 'skipped' ? 'Unchanged' : 'Uploaded'
   } catch (err) {
     item.status = 'Failed'
+    results.failed += 1
   } finally {
     uploadedCount.value += 1
   }
@@ -417,6 +478,7 @@ function selectAll(value) {
 function clearScan() {
   revokePreviews()
   items.value = []
+  hasScanned.value = false
   selectedTotal.value = 0
   uploadedCount.value = 0
   resetResults()
@@ -427,10 +489,21 @@ function resetResults() {
   results.updated = 0
   results.skipped = 0
   results.deleted = 0
+  results.failed = 0
 }
 
 function revokePreviews() {
   items.value.forEach((item) => URL.revokeObjectURL(item.previewUrl))
+}
+
+function refreshActivePreset() {
+  if (!activePreset.value) {
+    return
+  }
+  const updated = presets.value.find((preset) => preset.id === activePreset.value.id)
+  if (updated) {
+    activePreset.value = updated
+  }
 }
 
 async function readDirectoryFiles(handle, prefix = '') {

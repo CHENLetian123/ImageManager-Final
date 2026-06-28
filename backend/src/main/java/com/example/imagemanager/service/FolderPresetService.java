@@ -159,7 +159,12 @@ public class FolderPresetService {
         for (ImageItem image : existing) {
             String relativePath = normalizePath(image.getRelativePath());
             if (!currentPaths.contains(relativePath)) {
-                chooseStorage().delete(image.getR2ObjectKey());
+                try {
+                    chooseStorage().delete(image.getR2ObjectKey());
+                } catch (RuntimeException e) {
+                    throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                            "Storage delete failed for " + relativePath + ".", e);
+                }
                 imageRepository.delete(image);
                 deleted++;
             }

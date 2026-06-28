@@ -82,14 +82,21 @@ public class R2StorageService implements StorageService {
 
     @Override
     public void delete(String objectKey) {
-        if (!isAvailable() || objectKey == null || objectKey.isBlank()) {
-            return;
+        if (!isAvailable()) {
+            throw new IllegalStateException("R2 storage is not configured.");
         }
-        DeleteObjectRequest request = DeleteObjectRequest.builder()
-                .bucket(bucket)
-                .key(objectKey)
-                .build();
-        getClient().deleteObject(request);
+        if (objectKey == null || objectKey.isBlank()) {
+            throw new IllegalStateException("R2 object key is empty.");
+        }
+        try {
+            DeleteObjectRequest request = DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(objectKey)
+                    .build();
+            getClient().deleteObject(request);
+        } catch (SdkException e) {
+            throw new IllegalStateException("R2 delete failed.", e);
+        }
     }
 
     @Override

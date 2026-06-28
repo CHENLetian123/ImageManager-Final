@@ -26,8 +26,12 @@
 
     <p v-if="message" class="message success toast-message">{{ message }}</p>
     <p v-if="error" class="message error toast-message">{{ error }}</p>
+    <div class="list-status-row">
+      <span v-if="loading && images.length > 0" class="inline-loading">Refreshing images...</span>
+    </div>
 
-    <div v-if="loading" class="empty-state">Loading images...</div>
+    <div class="dashboard-content">
+    <div v-if="loading && images.length === 0" class="empty-state compact">Loading images...</div>
     <div v-else-if="images.length === 0" class="empty-state">
       <h2>No images found</h2>
       <p>Upload images, sync a folder, or adjust filters.</p>
@@ -63,6 +67,7 @@
           />
         </div>
       </section>
+    </div>
     </div>
 
     <ContextMenu
