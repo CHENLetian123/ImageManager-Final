@@ -59,7 +59,7 @@
         <div>
           <h3>{{ item.file.name }}</h3>
           <p class="muted">{{ item.relativePath }}</p>
-          <p class="meta-line">{{ formatSize(item.file.size) }} · {{ statusLabel(item) }}</p>
+          <p class="meta-line">{{ formatSize(item.file.size) }} | {{ statusLabel(item) }}</p>
         </div>
         <button class="button small danger" type="button" @click="removeItem(item.id)">Remove</button>
       </article>

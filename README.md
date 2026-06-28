@@ -2,20 +2,19 @@
 
 This project is based on a completed local Java Web ImageManager prototype and has been refactored into a separated frontend-backend architecture for final assessment and cloud deployment.
 
-ImageManager is a cloud-ready image management system. Users can register, log in, upload images, batch import browser-selected files or folders, search and filter metadata, toggle tags, copy image content or links, view details, and delete their own images.
+ImageManager is a cloud-ready image management system. Users can register, log in, upload images, batch import browser-selected files or folders, search and filter metadata, toggle tags, copy image content, view details, sync authorized folders, and delete their own images.
 
 ## Architecture
 
 - `backend`: Spring Boot RESTful API
 - `frontend`: Vue 3 SPA built with Vite
-- `database`: MySQL schema
-- Deployment target:
-  - Frontend: Cloudflare Pages
-  - Backend: Railway
-  - Database: Aiven MySQL
-  - Image storage: Cloudflare R2
+- `database`: MySQL schema and migration files
+- Frontend deployment: Cloudflare Pages
+- Backend deployment: Railway
+- Database: Aiven MySQL, currently using database `defaultdb`
+- Image storage: Cloudflare R2
 
-The backend uses Controller / Service / Repository layers. The frontend communicates with the backend through JSON REST APIs and stores JWT tokens in `localStorage`.
+The backend uses Controller / Service / Repository layers. The frontend communicates with REST APIs through Axios and stores JWT tokens in `localStorage`.
 
 ## Technology Stack
 
@@ -37,12 +36,16 @@ The backend uses Controller / Service / Repository layers. The frontend communic
 9. Image list
 10. Image detail
 11. Search images
-12. Filter by source / tag / time
+12. Instant filter by source / tag / time
 13. Sort images
-14. Toggle tags
-15. Delete image
-16. Copy image / fallback to link or download
-17. Responsive layout
+14. Toggle tags with a continuous tag menu
+15. Delete image and remove the R2 object
+16. Copy image binary to clipboard with link/download fallback
+17. Folder presets
+18. Browser directory authorization
+19. Folder sync with selected upload
+20. Optional delete missing cloud images
+21. Responsive layout
 
 These feature points satisfy the course requirement that the final project must include at least 10 functions. Login and registration are counted as two functions.
 
@@ -59,10 +62,21 @@ Images:
 - `GET /api/images`
 - `POST /api/images/upload`
 - `GET /api/images/{id}`
+- `GET /api/images/{id}/content`
 - `DELETE /api/images/{id}`
 - `POST /api/images/{id}/tags/toggle`
 - `GET /api/images/{id}/download`
 - `GET /api/images/sources`
+
+Folder presets:
+
+- `GET /api/folder-presets`
+- `POST /api/folder-presets`
+- `PUT /api/folder-presets/{id}`
+- `DELETE /api/folder-presets/{id}`
+- `GET /api/folder-presets/{id}/images/index`
+- `POST /api/folder-presets/{id}/images/upload`
+- `POST /api/folder-presets/{id}/cleanup-missing`
 
 Health:
 
@@ -70,24 +84,20 @@ Health:
 
 ## Database
 
-Database name: `imagemanager_final`
+Current cloud database name: `defaultdb`
 
-SQL file:
+SQL files:
 
 ```text
 database/schema.sql
+database/migration-folder-sync.sql
 ```
 
-The project also uses `spring.jpa.hibernate.ddl-auto=update` so the backend can update missing columns during development. The SQL file is kept for submission, review, and reproducible deployment.
+For a fresh database, run `database/schema.sql`. For the already deployed MVP database, run `database/migration-folder-sync.sql` to add Folder Sync support without dropping existing data.
+
+The project also uses `spring.jpa.hibernate.ddl-auto=update`, but SQL files are kept for submission, review, and reproducible deployment.
 
 ## Local Backend Run
-
-```bash
-cd backend
-mvn spring-boot:run
-```
-
-If Maven is not installed globally, use the Maven Wrapper:
 
 ```bash
 cd backend
@@ -101,9 +111,13 @@ cd backend
 mvnw.cmd spring-boot:run
 ```
 
-For local testing, create a MySQL database using `database/schema.sql`, then set environment variables from `backend/.env.example`.
+For local fallback storage:
 
-If R2 variables are missing, the backend can fall back to local file storage. For cloud deployment, set:
+```text
+STORAGE_TYPE=local
+```
+
+For cloud deployment:
 
 ```text
 STORAGE_TYPE=r2
@@ -123,15 +137,29 @@ Create `frontend/.env` from `frontend/.env.example`:
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
-## Git Commit Suggestion
+Cloudflare Pages must use the backend origin without `/api`:
 
-Recommended commit message:
+```text
+VITE_API_BASE_URL=https://imagemanager-final-production.up.railway.app
+```
+
+## Folder Sync Notes
+
+Browsers cannot silently read fixed local paths such as `D:/Screenshots`. Folder Sync uses user authorization in the browser:
+
+- Preferred: `showDirectoryPicker`
+- Fallback: `input type="file" webkitdirectory multiple`
+- Directory handles are stored in IndexedDB when supported
+- The backend never reads the user's local disk directly
+- Mobile browsers can use regular Upload when directory authorization is unavailable
+
+## Git Commit Suggestion
 
 ```text
 Add cloud-ready ImageManager frontend and backend
 ```
 
-Alternative:
+or:
 
 ```text
 Import completed ImageManager prototype and add cloud-ready SPA refactor
@@ -145,9 +173,10 @@ Import completed ImageManager prototype and add cloud-ready SPA refactor
 - Per-user image ownership checks
 - JPA Repository-based relational database persistence
 - Cloudflare R2 object storage integration
-- Browser folder selection and batch upload in groups of five
+- Protected image content streaming for clipboard copy
+- Folder presets and browser-authorized folder sync
+- Batch uploads in groups of five
 - Responsive Vue SPA for desktop and mobile use
-- Copy image support with link/download fallback
 
 ## Future Improvements
 

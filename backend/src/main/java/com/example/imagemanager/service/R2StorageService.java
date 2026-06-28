@@ -1,16 +1,21 @@
 package com.example.imagemanager.service;
 
 import com.example.imagemanager.dto.StorageResult;
+import com.example.imagemanager.dto.StorageContent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -88,6 +93,29 @@ public class R2StorageService implements StorageService {
     }
 
     @Override
+    public StorageContent load(String objectKey, String fallbackContentType) {
+        if (!isAvailable()) {
+            throw new IllegalStateException("R2 storage is not configured.");
+        }
+        if (!hasText(objectKey)) {
+            throw new IllegalStateException("R2 object key is empty.");
+        }
+
+        try {
+            GetObjectRequest request = GetObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(objectKey)
+                    .build();
+            ResponseInputStream<GetObjectResponse> stream = getClient().getObject(request);
+            GetObjectResponse response = stream.response();
+            String contentType = hasText(response.contentType()) ? response.contentType() : normalizeContentType(fallbackContentType);
+            return new StorageContent(stream, contentType, response.contentLength());
+        } catch (SdkException e) {
+            throw new IllegalStateException("R2 image read failed.", e);
+        }
+    }
+
+    @Override
     public String getPublicUrl(String objectKey) {
         return trimEnd(publicBaseUrl, "/") + "/" + objectKey;
     }
@@ -117,6 +145,10 @@ public class R2StorageService implements StorageService {
 
     private String normalizeContentType(MultipartFile file) {
         String contentType = file.getContentType();
+        return contentType == null || contentType.isBlank() ? "application/octet-stream" : contentType;
+    }
+
+    private String normalizeContentType(String contentType) {
         return contentType == null || contentType.isBlank() ? "application/octet-stream" : contentType;
     }
 

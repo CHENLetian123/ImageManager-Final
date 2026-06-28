@@ -1,11 +1,13 @@
 package com.example.imagemanager.service;
 
 import com.example.imagemanager.dto.StorageResult;
+import com.example.imagemanager.dto.StorageContent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -58,6 +60,24 @@ public class LocalStorageService implements StorageService {
     }
 
     @Override
+    public StorageContent load(String objectKey, String fallbackContentType) {
+        if (objectKey == null || objectKey.isBlank()) {
+            throw new IllegalStateException("Local object key is empty.");
+        }
+        try {
+            Path target = Path.of(uploadDir).resolve(objectKey).toAbsolutePath().normalize();
+            if (!Files.exists(target)) {
+                throw new IllegalStateException("Local file does not exist.");
+            }
+            InputStream inputStream = Files.newInputStream(target);
+            String contentType = Files.probeContentType(target);
+            return new StorageContent(inputStream, normalizeContentType(contentType != null ? contentType : fallbackContentType), Files.size(target));
+        } catch (IOException e) {
+            throw new IllegalStateException("Local file read failed.", e);
+        }
+    }
+
+    @Override
     public String getPublicUrl(String objectKey) {
         return trimEnd(publicBaseUrl, "/") + "/" + objectKey;
     }
@@ -72,6 +92,10 @@ public class LocalStorageService implements StorageService {
 
     private String normalizeContentType(MultipartFile file) {
         String contentType = file.getContentType();
+        return contentType == null || contentType.isBlank() ? "application/octet-stream" : contentType;
+    }
+
+    private String normalizeContentType(String contentType) {
         return contentType == null || contentType.isBlank() ? "application/octet-stream" : contentType;
     }
 

@@ -1,8 +1,24 @@
 spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: false
 
 app:
-  storage-type: ${STORAGE_TYPE:r2}
+  jwt-secret: ${JWT_SECRET}
+  jwt-expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  storage-type: ${STORAGE_TYPE:local}
+  local:
+    upload-dir: ${LOCAL_UPLOAD_DIR:uploads}
+    public-base-url: ${LOCAL_PUBLIC_BASE_URL:http://localhost:8080/local-files}
+  r2:
+    endpoint: ${R2_ENDPOINT:}
+    access-key-id: ${R2_ACCESS_KEY_ID:}
+    secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+    bucket: ${R2_BUCKET:}
+    public-base-url: ${R2_PUBLIC_BASE_URL:}

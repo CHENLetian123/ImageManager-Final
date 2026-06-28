@@ -61,6 +61,16 @@
           <option value="detail">Detail</option>
         </select>
       </label>
+
+      <label>
+        Group
+        <select :value="groupBy" class="input" @change="$emit('update:groupBy', $event.target.value)">
+          <option value="">No Group</option>
+          <option value="source">Source</option>
+          <option value="tag">Tag</option>
+          <option value="time">Time</option>
+        </select>
+      </label>
     </div>
   </section>
 </template>
@@ -78,10 +88,14 @@ defineProps({
   viewMode: {
     type: String,
     default: 'grid'
+  },
+  groupBy: {
+    type: String,
+    default: ''
   }
 })
 
-const emit = defineEmits(['update:filters', 'update:viewMode', 'apply', 'reset'])
+const emit = defineEmits(['update:filters', 'update:viewMode', 'update:groupBy', 'apply', 'reset'])
 
 function update(key, value) {
   emit('update:filters', { key, value })

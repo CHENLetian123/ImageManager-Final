@@ -19,6 +19,10 @@ export function getImage(id) {
   return http.get(`/api/images/${id}`)
 }
 
+export function getImageContent(id) {
+  return http.get(`/api/images/${id}/content`, { responseType: 'blob' })
+}
+
 export function deleteImage(id) {
   return http.delete(`/api/images/${id}`)
 }

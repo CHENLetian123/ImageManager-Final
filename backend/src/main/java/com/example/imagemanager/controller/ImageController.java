@@ -2,6 +2,7 @@ package com.example.imagemanager.controller;
 
 import com.example.imagemanager.dto.ImageResponse;
 import com.example.imagemanager.dto.MessageResponse;
+import com.example.imagemanager.dto.StorageContent;
 import com.example.imagemanager.dto.TagRequest;
 import com.example.imagemanager.entity.ImageItem;
 import com.example.imagemanager.entity.User;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -102,5 +104,22 @@ public class ImageController {
                 .header(HttpHeaders.LOCATION, image.getPublicUrl())
                 .location(URI.create(image.getPublicUrl()))
                 .build();
+    }
+
+    @GetMapping("/{id}/content")
+    public ResponseEntity<StreamingResponseBody> content(@AuthenticationPrincipal User user, @PathVariable Long id) {
+        StorageContent content = imageService.loadImageContent(id, user.getId());
+        StreamingResponseBody body = outputStream -> {
+            try (var inputStream = content.getInputStream()) {
+                inputStream.transferTo(outputStream);
+            }
+        };
+
+        ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(content.getContentType()));
+        if (content.getContentLength() != null && content.getContentLength() >= 0) {
+            builder.contentLength(content.getContentLength());
+        }
+        return builder.body(body);
     }
 }

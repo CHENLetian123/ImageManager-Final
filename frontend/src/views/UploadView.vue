@@ -25,7 +25,7 @@
         Tags
         <input v-model.trim="form.tags" class="input" placeholder="Common,Notes,Favorite" />
       </label>
-      <label>
+      <label class="upload-dropzone">
         Image File
         <input class="input" type="file" accept="image/*" required @change="pickFile" />
       </label>

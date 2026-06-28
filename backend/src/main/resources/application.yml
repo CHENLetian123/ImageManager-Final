@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/imagemanager_final?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/defaultdb?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:123456}
   jpa:
@@ -22,7 +22,7 @@ app:
   jwt-secret: ${JWT_SECRET:please-change-this-local-dev-secret-to-a-long-random-string}
   jwt-expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
-  storage-type: ${STORAGE_TYPE:r2}
+  storage-type: ${STORAGE_TYPE:local}
   local:
     upload-dir: ${LOCAL_UPLOAD_DIR:uploads}
     public-base-url: ${LOCAL_PUBLIC_BASE_URL:http://localhost:8080/local-files}

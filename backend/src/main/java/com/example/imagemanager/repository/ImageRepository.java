@@ -13,6 +13,10 @@ public interface ImageRepository extends JpaRepository<ImageItem, Long>, JpaSpec
 
     Optional<ImageItem> findByIdAndUserId(Long id, Long userId);
 
+    List<ImageItem> findByUserIdAndFolderPresetIdOrderByRelativePathAsc(Long userId, Long folderPresetId);
+
+    Optional<ImageItem> findByUserIdAndFolderPresetIdAndRelativePath(Long userId, Long folderPresetId, String relativePath);
+
     @Query("select distinct i.sourceName from ImageItem i where i.userId = :userId and i.sourceName is not null and i.sourceName <> '' order by i.sourceName")
     List<String> findDistinctSourceNamesByUserId(@Param("userId") Long userId);
 }

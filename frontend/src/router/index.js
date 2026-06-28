@@ -4,6 +4,7 @@ import RegisterView from '../views/RegisterView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import UploadView from '../views/UploadView.vue'
 import BatchUploadView from '../views/BatchUploadView.vue'
+import FolderSyncView from '../views/FolderSyncView.vue'
 import ImageDetailView from '../views/ImageDetailView.vue'
 
 const router = createRouter({
@@ -15,6 +16,7 @@ const router = createRouter({
     { path: '/dashboard', component: DashboardView },
     { path: '/upload', component: UploadView },
     { path: '/batch-upload', component: BatchUploadView },
+    { path: '/folders', component: FolderSyncView },
     { path: '/images/:id', component: ImageDetailView }
   ]
 })

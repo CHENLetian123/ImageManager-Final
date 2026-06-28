@@ -5,6 +5,7 @@
       <RouterLink to="/dashboard">Dashboard</RouterLink>
       <RouterLink to="/upload">Upload</RouterLink>
       <RouterLink to="/batch-upload">Batch Upload</RouterLink>
+      <RouterLink to="/folders">Folder Sync</RouterLink>
     </nav>
     <div class="nav-user">
       <span>{{ username }}</span>

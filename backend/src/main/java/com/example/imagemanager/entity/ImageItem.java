@@ -22,6 +22,9 @@ public class ImageItem {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "folder_preset_id")
+    private Long folderPresetId;
+
     @Column(length = 150)
     private String title;
 
@@ -100,6 +103,14 @@ public class ImageItem {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public Long getFolderPresetId() {
+        return folderPresetId;
+    }
+
+    public void setFolderPresetId(Long folderPresetId) {
+        this.folderPresetId = folderPresetId;
     }
 
     public String getTitle() {

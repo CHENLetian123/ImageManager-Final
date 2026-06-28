@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class ImageResponse {
 
     private Long id;
+    private Long folderPresetId;
     private String title;
     private String description;
     private String category;
@@ -27,6 +28,7 @@ public class ImageResponse {
     public static ImageResponse from(ImageItem image) {
         ImageResponse response = new ImageResponse();
         response.setId(image.getId());
+        response.setFolderPresetId(image.getFolderPresetId());
         response.setTitle(image.getTitle());
         response.setDescription(image.getDescription());
         response.setCategory(image.getCategory());
@@ -52,6 +54,14 @@ public class ImageResponse {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getFolderPresetId() {
+        return folderPresetId;
+    }
+
+    public void setFolderPresetId(Long folderPresetId) {
+        this.folderPresetId = folderPresetId;
     }
 
     public String getTitle() {

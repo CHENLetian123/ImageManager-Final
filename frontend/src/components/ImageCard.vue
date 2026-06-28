@@ -11,7 +11,7 @@
       <h3>{{ image.title || image.originalFileName }}</h3>
       <p class="muted">{{ image.category || 'Uncategorized' }}</p>
       <p class="meta-line">{{ image.sourceName || 'Upload' }}</p>
-      <p class="meta-line">{{ image.sourceType || 'UPLOAD' }} · {{ formatDate(image.lastModified) }}</p>
+      <p class="meta-line">{{ image.sourceType || 'UPLOAD' }} | {{ formatDate(image.lastModified) }}</p>
       <div class="tag-row">
         <span v-for="tag in tagList" :key="tag" class="tag">{{ tag }}</span>
       </div>

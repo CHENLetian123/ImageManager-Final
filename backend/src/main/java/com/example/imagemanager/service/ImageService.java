@@ -1,6 +1,7 @@
 package com.example.imagemanager.service;
 
 import com.example.imagemanager.dto.ImageResponse;
+import com.example.imagemanager.dto.StorageContent;
 import com.example.imagemanager.dto.StorageResult;
 import com.example.imagemanager.entity.ImageItem;
 import com.example.imagemanager.repository.ImageRepository;
@@ -32,7 +33,7 @@ public class ImageService {
 
     public ImageService(ImageRepository imageRepository,
                         List<StorageService> storageServices,
-                        @Value("${app.storage-type:r2}") String storageType) {
+                        @Value("${app.storage-type:local}") String storageType) {
         this.imageRepository = imageRepository;
         this.storageServices = storageServices;
         this.storageType = storageType;
@@ -96,6 +97,11 @@ public class ImageService {
         ImageItem image = findImageEntity(id, userId);
         chooseStorageForObject(image.getR2ObjectKey()).delete(image.getR2ObjectKey());
         imageRepository.delete(image);
+    }
+
+    public StorageContent loadImageContent(Long id, Long userId) {
+        ImageItem image = findImageEntity(id, userId);
+        return chooseStorageForObject(image.getR2ObjectKey()).load(image.getR2ObjectKey(), image.getContentType());
     }
 
     public ImageResponse toggleTag(Long id, Long userId, String tag) {
@@ -210,7 +216,7 @@ public class ImageService {
     }
 
     private StorageService chooseStorage() {
-        String expected = hasText(storageType) ? storageType.trim().toLowerCase(Locale.ROOT) : "r2";
+        String expected = hasText(storageType) ? storageType.trim().toLowerCase(Locale.ROOT) : "local";
         StorageService selected = storageServices.stream()
                 .filter(service -> service.getName().equalsIgnoreCase(expected))
                 .findFirst()
