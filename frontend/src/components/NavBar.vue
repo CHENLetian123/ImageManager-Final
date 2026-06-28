@@ -15,28 +15,52 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
 
 const showNav = computed(() => !route.meta.public)
-const username = computed(() => {
+const username = ref('User')
+
+onMounted(() => {
+  refreshUsername()
+  window.addEventListener('auth-changed', refreshUsername)
+  window.addEventListener('storage', refreshUsername)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('auth-changed', refreshUsername)
+  window.removeEventListener('storage', refreshUsername)
+})
+
+watch(
+  () => route.fullPath,
+  () => refreshUsername()
+)
+
+function refreshUsername() {
   const raw = localStorage.getItem('user')
   if (!raw) {
-    return 'User'
+    username.value = 'User'
+    return
   }
   try {
-    return JSON.parse(raw).username || 'User'
+    username.value = JSON.parse(raw).username || 'User'
   } catch (e) {
-    return 'User'
+    username.value = 'User'
   }
-})
+}
 
 function logout() {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
+  localStorage.removeItem('username')
+  sessionStorage.removeItem('token')
+  sessionStorage.removeItem('user')
+  sessionStorage.removeItem('username')
+  window.dispatchEvent(new Event('auth-changed'))
   router.push('/login')
 }
 </script>

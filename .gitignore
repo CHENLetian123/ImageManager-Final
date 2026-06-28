@@ -28,3 +28,5 @@ frontend/.env
 
 # Generated Folder Sync test image source folder
 test-data/ImageManager-Test-Images/
+test-data/Report-Test-Images-FolderSync/
+test-data/Report-Test-Images-Upload/

@@ -19,6 +19,11 @@ http.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
+      localStorage.removeItem('username')
+      sessionStorage.removeItem('token')
+      sessionStorage.removeItem('user')
+      sessionStorage.removeItem('username')
+      window.dispatchEvent(new Event('auth-changed'))
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login'
       }

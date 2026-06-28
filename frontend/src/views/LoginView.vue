@@ -45,11 +45,19 @@ async function submit() {
   message.value = ''
   try {
     const { data } = await login(form)
+    if (!data.token || !data.user?.username) {
+      throw new Error('Invalid login response.')
+    }
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(data.user))
+    localStorage.removeItem('username')
+    sessionStorage.removeItem('token')
+    sessionStorage.removeItem('user')
+    sessionStorage.removeItem('username')
+    window.dispatchEvent(new Event('auth-changed'))
     router.push('/dashboard')
   } catch (error) {
-    message.value = error.response?.data?.message || 'Login failed.'
+    message.value = error.response?.data?.message || error.message || 'Login failed.'
   } finally {
     loading.value = false
   }
