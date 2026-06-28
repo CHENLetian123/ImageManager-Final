@@ -1,0 +1,17 @@
+package com.example.imagemanager.service;
+
+import com.example.imagemanager.dto.StorageResult;
+import org.springframework.web.multipart.MultipartFile;
+
+public interface StorageService {
+
+    String getName();
+
+    boolean isAvailable();
+
+    StorageResult upload(MultipartFile file, Long userId);
+
+    void delete(String objectKey);
+
+    String getPublicUrl(String objectKey);
+}

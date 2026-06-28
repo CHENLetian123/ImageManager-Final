@@ -1,0 +1,34 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/imagemanager_final?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  servlet:
+    multipart:
+      max-file-size: 30MB
+      max-request-size: 30MB
+
+app:
+  jwt-secret: ${JWT_SECRET:please-change-this-local-dev-secret-to-a-long-random-string}
+  jwt-expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  storage-type: ${STORAGE_TYPE:r2}
+  local:
+    upload-dir: ${LOCAL_UPLOAD_DIR:uploads}
+    public-base-url: ${LOCAL_PUBLIC_BASE_URL:http://localhost:8080/local-files}
+  r2:
+    endpoint: ${R2_ENDPOINT:}
+    access-key-id: ${R2_ACCESS_KEY_ID:}
+    secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+    bucket: ${R2_BUCKET:}
+    public-base-url: ${R2_PUBLIC_BASE_URL:}
